@@ -149,20 +149,24 @@ public class MessageDAO {
                 prepStmnt.setString(1, msg.getMessage_text());
                 prepStmnt.setInt(2, existinMessage.getMessage_id());
 
-                prepStmnt.executeUpdate();
+                int updatedRows = prepStmnt.executeUpdate();
 
-                return new Message(
-                    existinMessage.getMessage_id(),
-                    msg.getPosted_by(),
-                    msg.getMessage_text(),
-                    msg.getTime_posted_epoch()
-                );
+                if (updatedRows > 0) {
+                    return new Message(
+                        existinMessage.getMessage_id(),
+                        existinMessage.getPosted_by(),
+                        msg.getMessage_text(),
+                        existinMessage.getTime_posted_epoch()
+                    );
+                }
+
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
         }
 
         return null;
+        
     }
 
     // get all messages by account id
@@ -205,13 +209,11 @@ public class MessageDAO {
             ResultSet rs = prepStmnt.executeQuery();
 
             while (rs.next()) {
-                Account retrievedAccount = new Account(
+                return new Account(
                     rs.getInt("account_id"),
                     rs.getString("username"),
                     rs.getString("password")
                 );
-
-                return retrievedAccount;
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());

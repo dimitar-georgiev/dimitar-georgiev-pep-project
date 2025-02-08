@@ -9,13 +9,13 @@ public class AccountDAO {
     // register
     public Account userRegistration(Account account) {
         Account existingUser = getUserByName(account.getUsername());
-
-        if (
-            existingUser == null &&
+        boolean validInput = (
             !account.getUsername().isBlank() &&
             !account.getUsername().isEmpty() && 
             account.password.length() >= 4
-        ) {
+        );
+
+        if ( existingUser == null && validInput ) {
             try {
                 Connection connection = ConnectionUtil.getConnection();
                 String sql = "INSERT INTO account (username, password) VALUES (?,?)";
@@ -45,11 +45,28 @@ public class AccountDAO {
     
     // login
     public Account userLogin (Account account) {
-        Account existingUser = getUserByName(account.getUsername());
         
-        if ((existingUser != null) && (existingUser.getPassword() == account.getPassword())) {
-            return existingUser;
+        try {
+            Connection connection = ConnectionUtil.getConnection();
+            String sql = "SELECT * FROM account WHERE username = ?  AND password = ?";
+            PreparedStatement perpStmnt = connection.prepareStatement(sql);
+
+            perpStmnt.setString(1, account.getUsername());
+            perpStmnt.setString(2, account.getPassword());
+
+            ResultSet rs = perpStmnt.executeQuery();
+
+            while (rs.next()) {
+                return new Account(
+                    rs.getInt("account_id"),
+                    rs.getString("username"),
+                    rs.getString("password")
+                );
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
+
         return null;
     }
 
@@ -66,13 +83,11 @@ public class AccountDAO {
             ResultSet rs = prepStmnt.executeQuery();
 
             while (rs.next()) {
-                Account retrievedAccount = new Account(
+                return new Account(
                     rs.getInt("account_id"),
                     rs.getString("username"),
                     rs.getString("password")
                 );
-
-                return retrievedAccount;
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -80,28 +95,28 @@ public class AccountDAO {
         return null;
     }
 
-    public Account getAccountById (int accId) {
-        try {
-            Connection connection = ConnectionUtil.getConnection();
-            String sql = "SELECT * FROM account WHERE account_id = ?";
-            PreparedStatement prepStmnt = connection.prepareStatement(sql);
+    // public Account getAccountById (int accId) {
+    //     try {
+    //         Connection connection = ConnectionUtil.getConnection();
+    //         String sql = "SELECT * FROM account WHERE account_id = ?";
+    //         PreparedStatement prepStmnt = connection.prepareStatement(sql);
 
-            prepStmnt.setInt(1, accId);
+    //         prepStmnt.setInt(1, accId);
 
-            ResultSet rs = prepStmnt.executeQuery();
+    //         ResultSet rs = prepStmnt.executeQuery();
 
-            while (rs.next()) {
-                Account retrievedAccount = new Account(
-                    rs.getInt("account_id"),
-                    rs.getString("username"),
-                    rs.getString("password")
-                );
+    //         while (rs.next()) {
+    //             Account retrievedAccount = new Account(
+    //                 rs.getInt("account_id"),
+    //                 rs.getString("username"),
+    //                 rs.getString("password")
+    //             );
 
-                return retrievedAccount;
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return null;
-    }
+    //             return retrievedAccount;
+    //         }
+    //     } catch (SQLException e) {
+    //         System.out.println(e.getMessage());
+    //     }
+    //     return null;
+    // }
 }
