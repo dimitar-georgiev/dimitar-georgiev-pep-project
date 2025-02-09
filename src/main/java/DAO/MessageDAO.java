@@ -3,7 +3,6 @@ package DAO;
 import Model.Message;
 import Model.Account;
 import Util.ConnectionUtil;
-import DAO.AccountDAO;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,7 +11,9 @@ import java.util.List;
 public class MessageDAO {
     // create message
     public Message createMessage(Message msg) {
-        Account existingAccount = getAccountById(msg.getPosted_by());
+        AccountDAO accountDAO = new AccountDAO();
+        Account existingAccount = accountDAO.getAccountById(msg.getPosted_by());
+       
         boolean validMsg = (
             !msg.getMessage_text().isBlank() && 
             !msg.getMessage_text().isEmpty() && 
@@ -26,7 +27,7 @@ public class MessageDAO {
                 
                 prepStmnt.setInt(1, msg.getPosted_by());
                 prepStmnt.setString(2, msg.getMessage_text());
-                prepStmnt.setLong(3, msg.getTime_posted_epoch()); // set type!!!
+                prepStmnt.setLong(3, msg.getTime_posted_epoch());
                 
                 prepStmnt.executeUpdate();
 
@@ -91,15 +92,13 @@ public class MessageDAO {
 
             ResultSet rs = prepStmnt.executeQuery();
 
-            while (rs.next()) {
-                Message msg = new Message(
+            if (rs.next()) {
+                return new Message(
                     rs.getInt("message_id"),
                     rs.getInt("posted_by"),
                     rs.getString("message_text"),
                     rs.getLong("time_posted_epoch")
                 );
-
-                return msg;
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -120,9 +119,11 @@ public class MessageDAO {
     
                 prepStmnt.setInt(1, msgId);
     
-                prepStmnt.executeUpdate();
-    
-                return existingMessage;
+                int deletedrows = prepStmnt.executeUpdate();
+                
+                if (deletedrows > 0) {
+                    return existingMessage;
+                }
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
@@ -133,30 +134,30 @@ public class MessageDAO {
 
     // update message by id
     public Message updatMessageById (Message msg) {
-        Message existinMessage = getMessageById(msg.getMessage_id());
+        Message existingMessage = getMessageById(msg.getMessage_id());
         boolean validMsg = (
             !msg.getMessage_text().isBlank() &&
             !msg.getMessage_text().isEmpty() &&
             msg.getMessage_text().length() <= 255
         );
 
-        if (existinMessage != null && validMsg) {
+        if (existingMessage != null && validMsg) {
             try {
                 Connection connection = ConnectionUtil.getConnection();
                 String sql = "UPDATE message SET message_text = ? WHERE message_id = ?";
                 PreparedStatement prepStmnt = connection.prepareStatement(sql);
 
                 prepStmnt.setString(1, msg.getMessage_text());
-                prepStmnt.setInt(2, existinMessage.getMessage_id());
+                prepStmnt.setInt(2, msg.getMessage_id());
 
                 int updatedRows = prepStmnt.executeUpdate();
 
                 if (updatedRows > 0) {
                     return new Message(
-                        existinMessage.getMessage_id(),
-                        existinMessage.getPosted_by(),
+                        msg.getMessage_id(),
+                        existingMessage.getPosted_by(),
                         msg.getMessage_text(),
-                        existinMessage.getTime_posted_epoch()
+                        existingMessage.getTime_posted_epoch()
                     );
                 }
 
@@ -196,28 +197,5 @@ public class MessageDAO {
             System.out.println(e.getMessage());
         }
         return retrievedMessages;
-    }
-
-    public Account getAccountById (int accId) {
-        try {
-            Connection connection = ConnectionUtil.getConnection();
-            String sql = "SELECT * FROM account WHERE account_id = ?";
-            PreparedStatement prepStmnt = connection.prepareStatement(sql);
-
-            prepStmnt.setInt(1, accId);
-
-            ResultSet rs = prepStmnt.executeQuery();
-
-            while (rs.next()) {
-                return new Account(
-                    rs.getInt("account_id"),
-                    rs.getString("username"),
-                    rs.getString("password")
-                );
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return null;
     }
 }

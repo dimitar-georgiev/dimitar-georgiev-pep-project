@@ -29,6 +29,7 @@ public class AccountDAO {
 
                 if (rs.next()) {
                     int createdUserId = (int) rs.getLong(1);
+                    
                     return new Account(
                         createdUserId,
                         account.getUsername(),
@@ -56,7 +57,7 @@ public class AccountDAO {
 
             ResultSet rs = perpStmnt.executeQuery();
 
-            while (rs.next()) {
+            if (rs.next()) {
                 return new Account(
                     rs.getInt("account_id"),
                     rs.getString("username"),
@@ -70,7 +71,7 @@ public class AccountDAO {
         return null;
     }
 
-    // get user by username
+    // get account by username
     private Account getUserByName (String username) {
         try {
             Connection connection = ConnectionUtil.getConnection();
@@ -82,7 +83,7 @@ public class AccountDAO {
 
             ResultSet rs = prepStmnt.executeQuery();
 
-            while (rs.next()) {
+            if (rs.next()) {
                 return new Account(
                     rs.getInt("account_id"),
                     rs.getString("username"),
@@ -95,28 +96,27 @@ public class AccountDAO {
         return null;
     }
 
-    // public Account getAccountById (int accId) {
-    //     try {
-    //         Connection connection = ConnectionUtil.getConnection();
-    //         String sql = "SELECT * FROM account WHERE account_id = ?";
-    //         PreparedStatement prepStmnt = connection.prepareStatement(sql);
+    // get account by id
+    public Account getAccountById (int accId) {
+        try {
+            Connection connection = ConnectionUtil.getConnection();
+            String sql = "SELECT * FROM account WHERE account_id = ?";
+            PreparedStatement prepStmnt = connection.prepareStatement(sql);
 
-    //         prepStmnt.setInt(1, accId);
+            prepStmnt.setInt(1, accId);
 
-    //         ResultSet rs = prepStmnt.executeQuery();
+            ResultSet rs = prepStmnt.executeQuery();
 
-    //         while (rs.next()) {
-    //             Account retrievedAccount = new Account(
-    //                 rs.getInt("account_id"),
-    //                 rs.getString("username"),
-    //                 rs.getString("password")
-    //             );
-
-    //             return retrievedAccount;
-    //         }
-    //     } catch (SQLException e) {
-    //         System.out.println(e.getMessage());
-    //     }
-    //     return null;
-    // }
+            if (rs.next()) {
+                return new Account(
+                    rs.getInt("account_id"),
+                    rs.getString("username"),
+                    rs.getString("password")
+                );
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
 }
